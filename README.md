@@ -1,7 +1,7 @@
 # EVSolution
 The purpose of the application is to generate the optimal schedule for the user from a given
-moment (the StartingTime) until the Leaving Time. Optimize on lowest energy bill for the user, while
-taking into account all mentioned user settings, Car Data and Price Tariff. This application reads the Charging Profile as a JSON
+moment (the StartingTime) until the Leaving Time. Optimize on the lowest energy bill for the user, 
+considering all mentioned User Settings, Car Data and Price Tariff. This application reads the Charging Profile as a JSON
 and generates the optimal ChargingSchedule as a JSON.
 
 # To Start the application
@@ -23,4 +23,4 @@ This folder contains classes and Helper classes. The helper classes help in the 
   - GeneratorChargingProfile has all the flow and logic of the application.
 
 - ChargingProfileGenerator.NUnitTest
-  -- Contains NUnit Test for the application.
+  - Contains NUnit Test for the application.
