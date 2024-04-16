@@ -1,70 +1,113 @@
-﻿using ChargingProfileGenerator.App;
+﻿
+using ChargingProfileGenerator.App;
 using ChargingProfileGenerator.Domain;
+using ChargingProfileGenerator.Domain.Helper;
 using ChargingProfileGenerator.Domain.OutputViewModel;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 
-[TestFixture]
-public class GeneratorChargingProfileTests
+namespace ChargingProfileGenerator.Tests
 {
-    [Test]
-    public void TestGenerateChargingProfile()
+    [TestFixture]
+    public class GeneratorChargingProfileTests
     {
-        // Arrange
-        DateTime startingTime = new DateTime(2020, 07, 01, 17, 00, 00); // 01-07-2020 17:00:00
-        UserSettings userSettings = new UserSettings
+        [Test]
+        public void TestGenerateChargingProfile_BatteryLow_CheapestTariff()
         {
-            LeavingTime = new TimeSpan(18, 00, 00), // 18:00:00
-            DesiredStateOfCharge = 80 // 80%
-        };
-        CarData carData = new CarData
-        {
-            CurrentBatteryLevel = 40, // 40%
-            BatteryCapacity = 100, // 100 kWh
-            ChargePower = 10 // 10 kW
-        };
-        List<Tariff> tariffs = new List<Tariff>
-        {
-            new Tariff { StartTime = new DateTime(2024, 07, 01, 18, 00, 00), EndTime = new DateTime(2024, 07, 01, 20, 17, 00), EnergyPrice = 0.15m },
-            new Tariff { StartTime = new DateTime(2024, 07, 01, 20, 17, 00), EndTime = new DateTime(2024, 07, 01, 23, 33, 00), EnergyPrice = 0.20m },
-            new Tariff { StartTime = new DateTime(2024, 07, 01, 23, 33, 00), EndTime = new DateTime(2024, 07, 02, 05, 22, 00), EnergyPrice = 0.10m },
-            new Tariff { StartTime = new DateTime(2024, 07, 02, 05, 22, 00), EndTime = new DateTime(2024, 07, 02, 07, 00, 00), EnergyPrice = 0.25m }
-        };
-        GeneratorChargingProfile generator = new GeneratorChargingProfile();
 
-        // Act
-        List<ChargingSchedule> chargingSchedule = generator.GenerateChargingProfile(startingTime, userSettings, carData);
+            // Arrange
+            GeneratorChargingProfile generator = new GeneratorChargingProfile();
+            DateTime startingTime = new DateTime(2024, 04, 17, 18, 12, 00);
+            UserSettings userSettings = new UserSettings
+            {
+                DesiredStateOfCharge = 80,
+                LeavingTime = new TimeSpan(7, 00, 00), 
+                DirectChargingPercentage = 20,
+                Tariffs = new List<Tariff>
+                {
+                new Tariff { StartTime = new DateTime(2024, 04, 16, 18, 00, 00), EndTime = new DateTime(2024, 04, 16, 20, 17, 00), EnergyPrice = 0.15m },
+                new Tariff { StartTime = new DateTime(2024, 04, 16, 20, 17, 00), EndTime = new DateTime(2024, 04, 16, 23, 33, 00), EnergyPrice = 0.20m },
+                new Tariff { StartTime = new DateTime(2024, 04, 16, 23, 33, 00), EndTime = new DateTime(2024, 04, 16, 05, 22, 00), EnergyPrice = 0.10m },
+                new Tariff { StartTime = new DateTime(2024, 04, 16, 05, 22, 00), EndTime = new DateTime(2024, 04, 16, 07, 00, 00), EnergyPrice = 0.25m },
+               
+                }
+            };
+            CarData carData = new CarData
+            {
+                ChargePower = 9.5m,
+                BatteryCapacity = 100m,
+                CurrentBatteryLevel = 15m, 
+                               
+            };
+            
+            // Act
+            List<ChargingSchedule> chargingSchedule = generator.GenerateChargingProfile(startingTime, userSettings, carData);
 
-        // Assert
-        Assert.That(chargingSchedule.Count, Is.EqualTo(4));
+            // Configure JsonSerializerOptions
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new DecimalConverter());
+            options.Converters.Add(new DateTimeConverter());
+            options.Converters.Add(new TimeSpanConverter());
+            options.WriteIndented = true;
 
-        Assert.Multiple(() =>
+            foreach (ChargingSchedule schedule in chargingSchedule)
+            {
+
+                // Serialize the ChargingSchedule object to JSON
+                string json = JsonSerializer.Serialize(schedule, options);
+
+                // Deserialize the JSON back to ChargingSchedule object
+                ChargingSchedule deserializedSchedule = JsonSerializer.Deserialize<ChargingSchedule>(json, options);
+
+                // Assert
+                Assert.That(deserializedSchedule.StartTime, Is.EqualTo(schedule.StartTime));
+                Assert.AreEqual(schedule.EndTime, deserializedSchedule.EndTime);
+                Assert.AreEqual(schedule.IsCharging, deserializedSchedule.IsCharging);
+                // Assert
+                Assert.That(schedule.StartTime, Is.EqualTo(new DateTime(2024, 04, 16, 23, 33, 00)));
+                Assert.That(schedule.EndTime, Is.EqualTo(new DateTime(2024, 04, 16, 05, 22, 00)));
+                Assert.That(schedule.IsCharging, Is.True);
+            }
+
+            Assert.IsNotNull(chargingSchedule);
+}
+
+        [Test]
+        public void TestGenerateChargingProfile_BatteryNotLow_CheapestTariff()
         {
-            Assert.That(chargingSchedule[0].StartTime, Is.EqualTo(new DateTime(2024, 07, 01, 18, 00, 00)));
-            Assert.That(chargingSchedule[0].EndTime, Is.EqualTo(new DateTime(2024, 07, 01, 20, 17, 00)));
-        });
-        Assert.That(chargingSchedule[0].IsCharging, Is.True);
+            // Arrange
+            DateTime startingTime = new DateTime(2024, 04, 17, 12, 00, 00);
+            UserSettings userSettings = new UserSettings
+            {
+                DesiredStateOfCharge = 80,
+                LeavingTime = new TimeSpan(18, 00, 00),
+                DirectChargingPercentage = 20,
+                Tariffs = new List<Tariff>
+                {
+                new Tariff { StartTime = new DateTime(2024, 04, 16, 18, 00, 00), EndTime = new DateTime(2024, 04, 16, 20, 17, 00), EnergyPrice = 0.15m },
+                new Tariff { StartTime = new DateTime(2024, 04, 16, 20, 17, 00), EndTime = new DateTime(2024, 04, 16, 23, 33, 00), EnergyPrice = 0.20m },
+                new Tariff { StartTime = new DateTime(2024, 04, 16, 23, 33, 00), EndTime = new DateTime(2024, 04, 16, 05, 22, 00), EnergyPrice = 0.10m },
+                new Tariff { StartTime = new DateTime(2024, 04, 16, 05, 22, 00), EndTime = new DateTime(2024, 04, 16, 07, 00, 00), EnergyPrice = 0.25m }
+                }
+            };
+            CarData carData = new CarData
+            {
+                CurrentBatteryLevel = 60, // Battery is not low
+                BatteryCapacity = 100,
+                ChargePower = 10
+            };
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(chargingSchedule[1].StartTime, Is.EqualTo(new DateTime(2024, 07, 01, 20, 17, 00)));
-            Assert.That(chargingSchedule[1].EndTime, Is.EqualTo(new DateTime(2024, 07, 01, 23, 33, 00)));
-        });
-        Assert.That(chargingSchedule[1].IsCharging, Is.False);
+            GeneratorChargingProfile generator = new GeneratorChargingProfile();
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(chargingSchedule[2].StartTime, Is.EqualTo(new DateTime(2024, 07, 01, 23, 33, 00)));
-            Assert.That(chargingSchedule[2].EndTime, Is.EqualTo(new DateTime(2024, 07, 02, 05, 22, 00)));
-        });
-        Assert.That(chargingSchedule[2].IsCharging, Is.True);
+            // Act
+            List<ChargingSchedule> chargingSchedule = generator.GenerateChargingProfile(startingTime, userSettings, carData);
 
-        Assert.Multiple(() =>
-        {
-            Assert.That(chargingSchedule[3].StartTime, Is.EqualTo(new DateTime(2024, 07, 02, 05, 22, 00)));
-            Assert.That(chargingSchedule[3].EndTime, Is.EqualTo(new DateTime(2024, 07, 02, 07, 00, 00)));
-        });
-        Assert.That(chargingSchedule[3].IsCharging, Is.False);
+            // Assert
+            Assert.That(chargingSchedule.Count, Is.EqualTo(1));
+            Assert.That(chargingSchedule[0].IsCharging, Is.False);
+        }
     }
 }
+

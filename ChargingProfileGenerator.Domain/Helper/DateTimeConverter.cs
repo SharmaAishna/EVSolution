@@ -22,4 +22,5 @@ namespace ChargingProfileGenerator.Domain.Helper
             writer.WriteStringValue(value.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ssZ"));
         }
     }
+   
 }

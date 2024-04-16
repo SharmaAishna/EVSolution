@@ -18,17 +18,18 @@ namespace ChargingProfileGenerator.App
                 throw new ArgumentNullException("Input parameters cannot be null.");
 
             List<ChargingSchedule> chargingSchedule = new List<ChargingSchedule>();
-
-            DateTime currentTime = DateTime.Now;
-            DateTime plugInCarTime = startingTime.Date.Add(userSettings.LeavingTime);
+            //DateTime plugInCarTime = startingTime.Date.Add(userSettings.LeavingTime);
+            DateTime currentTime = startingTime;
+         
 
             //checking currentTime is less than car leaving time.
-            if (currentTime < plugInCarTime)
+            while (currentTime < startingTime.Date.Add(userSettings.LeavingTime))
             { 
 
                 //Finding the available Tariff for the current Time.
-                // Tariff availableTariff = CalculateCurrentTariff(PlugInCarTime, userSettings.Tariffs);
-                Tariff tariff = IsBatteryLow(carData)? CalculateCurrentTariff(plugInCarTime, userSettings.Tariffs) : CalculateCheapestTariff(plugInCarTime, userSettings.Tariffs);
+           
+                Tariff tariff = IsBatteryLow(carData)? 
+                    CalculateCurrentTariff(currentTime, userSettings.Tariffs) : CalculateCheapestTariff(currentTime, userSettings.Tariffs);
 
                 // Calculate the duration until the next change in tariff
                 TimeSpan timeUntilNextChange = FindTimeUntilNextTariffChange(tariff.StartTime, tariff.EndTime);
@@ -37,21 +38,25 @@ namespace ChargingProfileGenerator.App
                 decimal energyNeeded = CalculateEnergyNeeded(userSettings, carData);
 
                 // Calculate the charging duration needed
-                decimal chargingDuration = energyNeeded / carData.ChargePower;
+                decimal chargingDuration = (energyNeeded / (carData.ChargePower/100));
 
                 bool isCharging = IsCharging(userSettings, carData, tariff, chargingDuration);
 
                 // Add the charging schedule to the profile
                 chargingSchedule.Add(new ChargingSchedule
                 {
-                    StartTime = tariff.StartTime,
-                    EndTime = tariff.StartTime.Add(timeUntilNextChange),
+                    StartTime = currentTime,
+                    EndTime = currentTime.Add(timeUntilNextChange),
                     IsCharging = isCharging
                 });
+                // Move to the next tariff period
+                currentTime = currentTime.Date.Add(timeUntilNextChange);
 
             }
 
+
             return chargingSchedule;
+
         }
 
         /// <summary>
@@ -133,13 +138,18 @@ namespace ChargingProfileGenerator.App
         /// <returns> decimal value of energyNeeded </returns>
         private decimal CalculateEnergyNeeded(UserSettings userSettings, CarData carData)
         {
-            decimal desiredCharge = userSettings.DesiredStateOfCharge;
-            decimal currentCharge = carData.CurrentBatteryLevel;
-
+            decimal desiredCharge =  userSettings.DesiredStateOfCharge ;
+            decimal currentCharge = carData.CurrentBatteryLevel / 100;
+            decimal energyNeeded;
             //As mentioned car can either charging with the full Charge Power or not charging at all (e.g. charging at e.g. half speed is not possible).
             //Therefore charging completedly.
             if (currentCharge < desiredCharge)
-                return (carData.BatteryCapacity * desiredCharge / 100) - currentCharge;
+            {
+                energyNeeded = ((carData.BatteryCapacity/100) * desiredCharge / 100) - currentCharge;
+
+                return energyNeeded;
+            }
+                
 
             return 0;
         }
@@ -154,11 +164,18 @@ namespace ChargingProfileGenerator.App
         /// <returns> returns bool value </returns>
         private bool IsCharging(UserSettings userSettings, CarData carData, Tariff tariff, decimal chargingDuration)
         {
-
+            bool charging;
+            
             decimal energyNeeded = CalculateEnergyNeeded(userSettings, carData);
-            decimal chargingCost = chargingDuration * carData.ChargePower * tariff.EnergyPrice;
+            decimal totalCost = energyNeeded * (tariff.EnergyPrice / 100);
+           decimal chargingCost = chargingDuration * (carData.ChargePower/100) * (tariff.EnergyPrice/100);
 
-            return chargingCost <= energyNeeded * tariff.EnergyPrice;
+            if (chargingCost < totalCost)
+            { charging = true; }
+            else { charging = false; }
+
+
+            return charging;
 
         }
 
