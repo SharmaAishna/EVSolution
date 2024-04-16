@@ -1,6 +1,6 @@
 [
   {
-    "isCharging": false,
+    "isCharging": true,
     "startTime": "2024-04-17T00:00:00Z",
     "endTime": "2024-04-17T07:14:00Z"
   }

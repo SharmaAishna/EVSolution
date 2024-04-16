@@ -170,7 +170,7 @@ namespace ChargingProfileGenerator.App
             decimal totalCost = energyNeeded * (tariff.EnergyPrice / 100);
            decimal chargingCost = chargingDuration * (carData.ChargePower/100) * (tariff.EnergyPrice/100);
 
-            if (chargingCost < totalCost)
+            if (chargingCost <= totalCost)
             { charging = true; }
             else { charging = false; }
 

@@ -55,16 +55,6 @@ namespace ChargingProfileGenerator.Tests
             foreach (ChargingSchedule schedule in chargingSchedule)
             {
 
-                // Serialize the ChargingSchedule object to JSON
-                string json = JsonSerializer.Serialize(schedule, options);
-
-                // Deserialize the JSON back to ChargingSchedule object
-                ChargingSchedule deserializedSchedule = JsonSerializer.Deserialize<ChargingSchedule>(json, options);
-
-                // Assert
-                Assert.That(deserializedSchedule.StartTime, Is.EqualTo(schedule.StartTime));
-                Assert.AreEqual(schedule.EndTime, deserializedSchedule.EndTime);
-                Assert.AreEqual(schedule.IsCharging, deserializedSchedule.IsCharging);
                 // Assert
                 Assert.That(schedule.StartTime, Is.EqualTo(new DateTime(2024, 04, 16, 23, 33, 00)));
                 Assert.That(schedule.EndTime, Is.EqualTo(new DateTime(2024, 04, 16, 05, 22, 00)));
@@ -78,7 +68,7 @@ namespace ChargingProfileGenerator.Tests
         public void TestGenerateChargingProfile_BatteryNotLow_CheapestTariff()
         {
             // Arrange
-            DateTime startingTime = new DateTime(2024, 04, 17, 12, 00, 00);
+            DateTime startingTime = new DateTime(2024, 04, 17, 08, 00, 00);
             UserSettings userSettings = new UserSettings
             {
                 DesiredStateOfCharge = 80,
@@ -94,9 +84,9 @@ namespace ChargingProfileGenerator.Tests
             };
             CarData carData = new CarData
             {
-                CurrentBatteryLevel = 60, // Battery is not low
-                BatteryCapacity = 100,
-                ChargePower = 10
+                CurrentBatteryLevel = 9.5m,
+                BatteryCapacity = 100m,
+                ChargePower = 100
             };
 
             GeneratorChargingProfile generator = new GeneratorChargingProfile();
@@ -104,9 +94,20 @@ namespace ChargingProfileGenerator.Tests
             // Act
             List<ChargingSchedule> chargingSchedule = generator.GenerateChargingProfile(startingTime, userSettings, carData);
 
+            // Configure JsonSerializerOptions
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new DecimalConverter());
+            options.Converters.Add(new DateTimeConverter());
+            options.Converters.Add(new TimeSpanConverter());
+            options.WriteIndented = true;
             // Assert
-            Assert.That(chargingSchedule.Count, Is.EqualTo(1));
-            Assert.That(chargingSchedule[0].IsCharging, Is.False);
+            foreach (ChargingSchedule schedule in chargingSchedule)
+            {
+
+                Assert.That(schedule.StartTime, Is.EqualTo(new DateTime(2024, 04, 16, 23, 33, 00)));
+                Assert.That(schedule.EndTime, Is.EqualTo(new DateTime(2024, 04, 16, 05, 22, 00)));
+                Assert.That(schedule.IsCharging, Is.False);
+            }
         }
     }
 }

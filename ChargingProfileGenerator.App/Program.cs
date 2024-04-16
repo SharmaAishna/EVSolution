@@ -10,7 +10,7 @@ class Program
     static void Main(string[] args)
     {
         // Read input from JSON file
-        string Inputfile = @"C:\Users\aishn\source\repos\EVSolution\Input.json";
+        string Inputfile = @"C:\Users\aishn\source\repos\EVSolution\ChargingprofileGenerator.JsonFiles\Input.json";
 
         using (StreamReader reader = new StreamReader(Inputfile))
         {
@@ -36,7 +36,7 @@ class Program
                 Console.WriteLine(jsonOutput);
 
                 //Write to Output Json File
-                string Outputfile = @"C:\Users\aishn\source\repos\EVSolution\Output.json";
+                string Outputfile = @"C:\Users\aishn\source\repos\EVSolution\ChargingprofileGenerator.JsonFiles\Output.json";
                 File.WriteAllText(Outputfile, jsonOutput);
                 //Write to Console
                 Console.WriteLine(Outputfile);
