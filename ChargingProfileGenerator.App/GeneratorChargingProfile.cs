@@ -1,10 +1,5 @@
 ﻿using ChargingProfileGenerator.Domain;
 using ChargingProfileGenerator.Domain.OutputViewModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ChargingProfileGenerator.App
 {
@@ -18,17 +13,16 @@ namespace ChargingProfileGenerator.App
                 throw new ArgumentNullException("Input parameters cannot be null.");
 
             List<ChargingSchedule> chargingSchedule = new List<ChargingSchedule>();
-            //DateTime plugInCarTime = startingTime.Date.Add(userSettings.LeavingTime);
-            DateTime currentTime = startingTime;
-         
 
+            DateTime currentTime = startingTime;
+           
             //checking currentTime is less than car leaving time.
             while (currentTime < startingTime.Date.Add(userSettings.LeavingTime))
-            { 
+            {
 
                 //Finding the available Tariff for the current Time.
-           
-                Tariff tariff = IsBatteryLow(carData)? 
+
+                Tariff tariff = IsBatteryLow(carData) ?
                     CalculateCurrentTariff(currentTime, userSettings.Tariffs) : CalculateCheapestTariff(currentTime, userSettings.Tariffs);
 
                 // Calculate the duration until the next change in tariff
@@ -38,7 +32,7 @@ namespace ChargingProfileGenerator.App
                 decimal energyNeeded = CalculateEnergyNeeded(userSettings, carData);
 
                 // Calculate the charging duration needed
-                decimal chargingDuration = (energyNeeded / (carData.ChargePower/100));
+                decimal chargingDuration = (energyNeeded / (carData.ChargePower / 100));
 
                 bool isCharging = IsCharging(userSettings, carData, tariff, chargingDuration);
 
@@ -66,13 +60,16 @@ namespace ChargingProfileGenerator.App
         /// <param name="Tariffs"> List of tariffs </param>
         /// <returns> returns cheapest tariff </returns>
 
-        private Tariff CalculateCheapestTariff(DateTime plugInCarTime, List<Tariff> tariffs)
+        private Tariff CalculateCheapestTariff(DateTime currentTime, List<Tariff> tariffs)
         {
-          // Find the tariff with the cheapest energy price that is applicable for the plugInCar time
+            // Find the tariff with the cheapest energy price that is applicable for the current time
+          //  Tariff cheapestEnergyPriceTariff = tariffs.FirstOrDefault(t => t.StartTime <= currentTime && t.EndTime > currentTime);
+
+            // Finding the tariff with the cheapest energy price that is applicable for the currentTime time
             Tariff cheapestTariff = tariffs[0];
             foreach (var tariff in tariffs)
-            { // Check if the tariff is valid for the plugInCar time
-                if (tariff.StartTime <= plugInCarTime && tariff.EndTime > plugInCarTime)
+            { // Check if the tariff is valid for the currentTime time
+                if (currentTime.Add(tariff.StartTime) <= currentTime && currentTime.Add(tariff.EndTime) > currentTime)
                 {   // Check if the energy price of the current tariff is lower than the energy price of the cheapestTariff
 
                     if (tariff.EnergyPrice < cheapestTariff.EnergyPrice)
@@ -92,11 +89,11 @@ namespace ChargingProfileGenerator.App
         /// <param name="currentTime"> provides currentTime according to avalability</param>
         /// <param name="Tariffs"> List of tariffs </param>
         /// <returns> returns current available tariff </returns>
-        private Tariff CalculateCurrentTariff(DateTime plugInCarTime, List<Tariff> tariffs)
+        private Tariff CalculateCurrentTariff(DateTime currentTime, List<Tariff> tariffs)
         {
             foreach (var tariff in tariffs)
             {
-                if (tariff.StartTime <= plugInCarTime && plugInCarTime < tariff.EndTime)
+                if (currentTime.Add(tariff.StartTime) <= currentTime && currentTime < currentTime.Add(tariff.EndTime))
                 {
                     return tariff;
                 }
@@ -110,10 +107,10 @@ namespace ChargingProfileGenerator.App
         /// <param name="tariffStartTime"> start time of Tariff </param>
         /// <param name="tariffEndTime"> end time of Tariff </param>
         /// <returns> returns TimeSpan </returns>
-        private TimeSpan FindTimeUntilNextTariffChange(DateTime tariffStartTime, DateTime tariffEndTime)
+        private TimeSpan FindTimeUntilNextTariffChange(TimeSpan tariffStartTime, TimeSpan tariffEndTime)
         {
             // Check if the end time is greater than the start time in terms of time of day
-            if (tariffEndTime.TimeOfDay > tariffStartTime.TimeOfDay)
+            if (tariffEndTime > tariffStartTime)
             {
                 // If end time is greater, simply subtract start time from end time
                 return tariffEndTime - tariffStartTime;
@@ -122,8 +119,8 @@ namespace ChargingProfileGenerator.App
             {
                 // If end time is not greater, it means the tariff period crosses midnight
                 // Subtract start time from midnight, add end time, and subtract one day to get the correct time span
-                TimeSpan timeUntilMidnight = DateTime.Today.AddDays(1) - tariffStartTime;
-                TimeSpan timeFromMidnight = tariffEndTime.TimeOfDay;
+                TimeSpan timeUntilMidnight = DateTime.Today.AddDays(1).TimeOfDay - tariffStartTime;
+                TimeSpan timeFromMidnight = tariffEndTime;
 
                 return timeUntilMidnight + timeFromMidnight;
             }
@@ -138,18 +135,18 @@ namespace ChargingProfileGenerator.App
         /// <returns> decimal value of energyNeeded </returns>
         private decimal CalculateEnergyNeeded(UserSettings userSettings, CarData carData)
         {
-            decimal desiredCharge =  userSettings.DesiredStateOfCharge ;
+            decimal desiredCharge = userSettings.DesiredStateOfCharge;
             decimal currentCharge = carData.CurrentBatteryLevel / 100;
             decimal energyNeeded;
             //As mentioned car can either charging with the full Charge Power or not charging at all (e.g. charging at e.g. half speed is not possible).
             //Therefore charging completedly.
             if (currentCharge < desiredCharge)
             {
-                energyNeeded = ((carData.BatteryCapacity/100) * desiredCharge / 100) - currentCharge;
+                energyNeeded = ((carData.BatteryCapacity / 100) * desiredCharge / 100) - currentCharge;
 
                 return energyNeeded;
             }
-                
+
 
             return 0;
         }
@@ -165,14 +162,19 @@ namespace ChargingProfileGenerator.App
         private bool IsCharging(UserSettings userSettings, CarData carData, Tariff tariff, decimal chargingDuration)
         {
             bool charging;
-            
+
             decimal energyNeeded = CalculateEnergyNeeded(userSettings, carData);
             decimal totalCost = energyNeeded * (tariff.EnergyPrice / 100);
-           decimal chargingCost = chargingDuration * (carData.ChargePower/100) * (tariff.EnergyPrice/100);
+            decimal chargingCost = chargingDuration * (carData.ChargePower / 100) * (tariff.EnergyPrice / 100);
 
             if (chargingCost <= totalCost)
-            { charging = true; }
-            else { charging = false; }
+            {
+                charging = true;
+            }
+            else
+            {
+                charging = false;
+            }
 
 
             return charging;

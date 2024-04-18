@@ -8,10 +8,10 @@ namespace ChargingProfileGenerator.Domain.BaseModel
     public class BaseClass
     {
         [JsonPropertyName("startTime")]
-        [JsonConverter(typeof(DateTimeConverter))]
+        [JsonConverter(typeof(TimeSpanConverter))]
         public DateTime StartTime { get; set; }
         [JsonPropertyName("endTime")]
-        [JsonConverter(typeof(DateTimeConverter))]
+        [JsonConverter(typeof(TimeSpanConverter))]
         public DateTime EndTime { get; set; }
     }
 }
