@@ -6,7 +6,10 @@ and generates the optimal ChargingSchedule as a JSON.
 
 # To Start the application
 
-Download the latest version of Visual Studio 2022.
+- Download the latest version of Visual Studio 2022.
+- In JSON file change the startingDate to the next day.
+
+# Explation of application
 The project contains Four folders 
 
 - ChargingProfileGenerator.Domain 
