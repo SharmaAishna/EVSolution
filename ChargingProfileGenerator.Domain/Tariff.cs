@@ -1,5 +1,4 @@
-﻿using ChargingProfileGenerator.Domain.BaseModel;
-using ChargingProfileGenerator.Domain.Helper;
+﻿using ChargingProfileGenerator.Domain.Helper;
 using System.Text.Json.Serialization;
 
 namespace ChargingProfileGenerator.Domain

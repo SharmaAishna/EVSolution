@@ -1,12 +1,5 @@
-﻿using ChargingProfileGenerator.Domain.BaseModel;
-using ChargingProfileGenerator.Domain.Helper;
-using System;
-using System.Collections.Generic;
-
-using System.Linq;
-using System.Text;
+﻿using ChargingProfileGenerator.Domain.Helper;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace ChargingProfileGenerator.Domain.OutputViewModel
 {

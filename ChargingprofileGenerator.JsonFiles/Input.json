@@ -1,5 +1,5 @@
 {
-  "startingTime": "2024-04-19T00:00:00Z",
+  "startingTime": "2024-04-23T00:00:00Z",
   "userSettings": {
     "desiredStateOfCharge": 90,
     "leavingTime": "7:00",
@@ -7,17 +7,17 @@
     "tariffs": [
       {
         "startTime": "00:00",
-        "endTime": "07:14",
+        "endTime": "07:15",
         "energyPrice": "0.22"
       },
       {
         "startTime": "07:15",
-        "endTime": "22:59",
+        "endTime": "23:00",
         "energyPrice": "0.25"
       },
       {
         "startTime": "23:00",
-        "endTime": "23:59",
+        "endTime": "00:00",
         "energyPrice": "0.22"
       }
 
