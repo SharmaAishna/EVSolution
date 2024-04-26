@@ -1,6 +1,7 @@
 ﻿using ChargingProfileGenerator.Domain;
 using ChargingProfileGenerator.Domain.DTOs;
 using ChargingProfileGenerator.Domain.OutputViewModel;
+using System;
 
 namespace ChargingProfileGenerator.App
 {
@@ -35,13 +36,23 @@ namespace ChargingProfileGenerator.App
 
                 // Calculate the charging duration needed
                 decimal chargingDuration = (energyNeeded / (carData.ChargePower / 100));
+
+                // Convert decimal hours to hours and minutes
+                int chargingHours = (int)chargingDuration;
+                int chargingMinutes = (int)((chargingDuration - chargingHours) * 60);
+
+                // Add charging duration to current time
+                DateTime chargingTariffEndTime = tariff.StartTime.AddHours(chargingHours).AddMinutes(chargingMinutes);
+
+
+
                 bool isCharging = IsCharging(userSettings, carData, tariff, chargingDuration);
 
                 // Add the charging schedule to the profile
                 chargingSchedule.Add(new ChargingSchedule
                 {
                     StartTime = tariff.StartTime,
-                    EndTime = tariff.EndTime,
+                    EndTime = chargingTariffEndTime,
                     IsCharging = isCharging
                 });
 
