@@ -28,8 +28,6 @@ namespace ChargingProfileGenerator.App
                 TariffDTO tariff = IsBatteryLow(carData) ?
                     CalculateCurrentTariff(currentTime, userSettings.Tariffs) : CalculateCheapestTariff(currentTime, userSettings.Tariffs, startingTime);
 
-                // Calculate the hours needed to charge
-                CalculateTariffHours(tariff.StartTime.TimeOfDay, tariff.EndTime.TimeOfDay);
 
                 // Calculate the energy needed to reach the desired state of charge
                 decimal energyNeeded = CalculateEnergyNeeded(userSettings, carData);
@@ -37,14 +35,8 @@ namespace ChargingProfileGenerator.App
                 // Calculate the charging duration needed
                 decimal chargingDuration = (energyNeeded / (carData.ChargePower / 100));
 
-                // Convert decimal hours to hours and minutes
-                int chargingHours = (int)chargingDuration;
-                int chargingMinutes = (int)((chargingDuration - chargingHours) * 60);
-
-                // Add charging duration to current time
-                DateTime chargingTariffEndTime = tariff.StartTime.AddHours(chargingHours).AddMinutes(chargingMinutes);
-
-
+                // Calculate the hours needed to charge
+                DateTime chargingTariffEndTime = CalculateTariffEndTime(chargingDuration, tariff);
 
                 bool isCharging = IsCharging(userSettings, carData, tariff, chargingDuration);
 
@@ -118,23 +110,16 @@ namespace ChargingProfileGenerator.App
         /// <param name="tariffStartTime"> start time of Tariff </param>
         /// <param name="tariffEndTime"> end time of Tariff </param>
         /// <returns> returns TimeSpan </returns>
-        private TimeSpan CalculateTariffHours(TimeSpan tariffStartTime, TimeSpan tariffEndTime)
+        private DateTime CalculateTariffEndTime(decimal chargingDuration, TariffDTO tariff)
         {
-            // Check if the end time is greater than the start time in terms of time of day
-            if (tariffEndTime > tariffStartTime)
-            {
-                // If end time is greater, simply subtract start time from end time to get the hours.
-                return tariffEndTime - tariffStartTime;
-            }
-            else
-            {
-                // If end time is not greater, it means the tariff period crosses midnight
-                // Subtract start time from midnight, add end time, and subtract one day to get the correct time span
-                TimeSpan timeUntilMidnight = DateTime.Today.AddDays(1).TimeOfDay - tariffStartTime;
-                TimeSpan timeFromMidnight = tariffEndTime;
+            // Convert decimal hours to hours and minutes
+            int chargingHours = (int)chargingDuration;
+            int chargingMinutes = (int)((chargingDuration - chargingHours) * 60);
 
-                return timeUntilMidnight + timeFromMidnight;
-            }
+            // Add charging duration to current time
+            DateTime chargingTariffEndTime = tariff.StartTime.AddHours(chargingHours).AddMinutes(chargingMinutes);
+
+            return chargingTariffEndTime;
         }
 
 
