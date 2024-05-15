@@ -11,9 +11,7 @@ namespace ChargingProfileGenerator.App
         public List<ChargingSchedule> GenerateChargingProfile(DateTime startingTime, UserSettings userSettings, CarData carData)
         {
             //not checking DateTime startingTime as it will be always false.
-            if (userSettings == null || carData == null)
-                throw new ArgumentNullException("Input parameters cannot be null.");
-
+          
             List<ChargingSchedule> chargingSchedule = new List<ChargingSchedule>();
 
             DateTime currentTime = DateTime.Now;
